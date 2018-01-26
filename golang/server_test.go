@@ -995,10 +995,18 @@ func compileAndRun(code []byte) (string, error) {
 		return "", err
 	}
 
-	// compile
-	cmd := exec.Command("bash", "-c", "go build")
+	// get deps
+	cmd := exec.Command("bash", "-c", "go get .")
 	cmd.Dir = name
 	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("%v: %s", err, out)
+	}
+
+	// compile
+	cmd = exec.Command("bash", "-c", "go build")
+	cmd.Dir = name
+	out, err = cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("%v: %s", err, out)
 	}
