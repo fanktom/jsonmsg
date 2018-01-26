@@ -1,0 +1,55 @@
+{
+  "endpoints": {
+    "http": {
+      "host": "http://api.specc.io",
+      "path": "/v1"
+    }
+  },
+  "messages": {
+    "loginWithCredentials": {
+      "in": "#/definitions/credentials",
+      "outs": ["#/definitions/session", "#/definitions/error"]
+    },
+    "logout": {
+      "in": "#/definitions/session",
+      "outs": ["#/definitions/message"]
+    }
+  },
+  "definitions": {
+    "credentials": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "session": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "message": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
