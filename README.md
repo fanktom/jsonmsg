@@ -1,5 +1,6 @@
 # jsonmsg
 A Go package that parses API specs to generate server/client source code in any supported language
+
 [![CircleCI](https://circleci.com/gh/tfkhsr/jsonschema.svg?style=svg)](https://circleci.com/gh/tfkhsr/jsonschema)
 
 ## Features
