@@ -3,7 +3,7 @@ package jsonmsg
 import (
 	"testing"
 
-	"gitlab.mi.hdm-stuttgart.de/smu/jsonmsg/fixture"
+	"github.com/tfkhsr/jsonmsg/fixture"
 )
 
 func TestSimpleLogin(t *testing.T) {

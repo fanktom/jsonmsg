@@ -9,8 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"gitlab.mi.hdm-stuttgart.de/smu/jsonmsg"
-
+	"github.com/tfkhsr/jsonmsg"
 	"github.com/tfkhsr/jsonschema"
 	"github.com/tfkhsr/jsonschema/golang"
 )

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"gitlab.mi.hdm-stuttgart.de/smu/jsonmsg"
-	"gitlab.mi.hdm-stuttgart.de/smu/jsonmsg/golang"
+	"github.com/tfkhsr/jsonmsg"
+	"github.com/tfkhsr/jsonmsg/golang"
 )
 
 func main() {

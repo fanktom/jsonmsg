@@ -8,8 +8,8 @@ import (
 	"os/exec"
 	"testing"
 
-	"gitlab.mi.hdm-stuttgart.de/smu/jsonmsg"
-	"gitlab.mi.hdm-stuttgart.de/smu/jsonmsg/fixture"
+	"github.com/tfkhsr/jsonmsg"
+	"github.com/tfkhsr/jsonmsg/fixture"
 )
 
 func TestGenerateGoInterfaceType(t *testing.T) {
