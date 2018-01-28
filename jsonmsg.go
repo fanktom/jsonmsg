@@ -14,9 +14,8 @@ Parse a spec:
 	schema := `
 	{
 	  "endpoints": {
-	    "host": "jsonmsg.github.io/v1",
-	    "protocols": ["http", "websocket"],
-	    "tls": true
+	    "http": "https://jsonmsg.github.io/v1",
+	    "websocket": "wss://jsonmsg.github.io/v1"
 	  },
 	  "messages": {
 	    "findUser": {
@@ -70,8 +69,6 @@ Parse a spec:
 	}
 
 	// spc now contains:
-	// spc.Endpoints.URLs["http"]      : https://jsonmsg.github.io/v1/http
-	// spc.Endpoints.URLs["websocket"] : wss://jsonmsg.github.io/v1/websocket
 	// spc.Messages["findUser"]        : *Message{...}
 	// spc.Definitions["user"]         : *jsonschema.Schema{...}
 */
@@ -99,27 +96,8 @@ type Spec struct {
 	// Further information
 	Description string
 
-	// Location and supported protocol information
-	Endpoints struct {
-
-		// Host URI with authority and path as defined in https://tools.ietf.org/html/rfc3986#section-3
-		Host string
-
-		// Supported protocols from: []string{ "http", "websocket" }
-		Protocols []string
-
-		// Transport Layer Security enabled
-		TLS bool
-
-		// Map of protocol to full URL of endpoint
-		URLs map[string]string
-
-		// URL endpoint containing TLS specific scheme
-		BaseURL string
-
-		// Path component of base URL
-		BasePath string
-	}
+	// Map of protocols to URLs (urlString embeds url.URL for unmarshaling)
+	Endpoints map[string]*urlString
 
 	// Map of message names to Messages
 	Messages map[string]*Message
@@ -132,6 +110,20 @@ type Spec struct {
 
 	// Raw spec
 	Raw []byte
+}
+
+type urlString struct {
+	url.URL
+}
+
+func (s *urlString) UnmarshalJSON(b []byte) error {
+	us := string(b)
+	u, err := url.Parse(us[1 : len(us)-1])
+	if err != nil {
+		return err
+	}
+	*s = urlString{*u}
+	return nil
 }
 
 // A Message holds details about name, in- and out parameters
@@ -179,31 +171,9 @@ func Parse(b []byte) (*Spec, error) {
 	spec.Raw = b
 
 	// endpoints
-	spec.Endpoints.URLs = make(map[string]string)
-	for _, p := range spec.Endpoints.Protocols {
-		var scheme string
-		switch p {
-		case "websocket":
-			scheme = "ws"
-		default:
-			scheme = "http"
-		}
-
-		if spec.Endpoints.TLS {
-			scheme += "s"
-		}
-		spec.Endpoints.URLs[p] = fmt.Sprintf("%s://%s/%s", scheme, spec.Endpoints.Host, p)
+	for k, _ := range spec.Endpoints {
+		spec.Endpoints[k].Path += "/" + k
 	}
-	baseScheme := "http"
-	if spec.Endpoints.TLS {
-		baseScheme += "s"
-	}
-	spec.Endpoints.BaseURL = fmt.Sprintf("%s://%s", baseScheme, spec.Endpoints.Host)
-	u, err := url.Parse(spec.Endpoints.BaseURL)
-	if err != nil {
-		return nil, err
-	}
-	spec.Endpoints.BasePath = u.EscapedPath()
 
 	// definitions
 	idx, err := jsonschema.Parse(b)
@@ -324,6 +294,9 @@ func writeTemplate(s *Spec, t string, w io.Writer) error {
 				panic(err)
 			}
 			return string(jsn)
+		},
+		"SubstringRight": func(a string, n int) string {
+			return a[0 : len(a)-n]
 		},
 	}).Parse(t)
 	if err != nil {
@@ -470,9 +443,9 @@ const httpSpecTemplate = `
 		</style>
 		<script>
 			var jsonmsg = {
-				{{ if (index .Endpoints.URLs "http") }}
+				{{ if (index .Endpoints "http") }}
 				http: {
-					endpoint: "{{ js (index .Endpoints.URLs "http") }}",
+					endpoint: "{{ js (index .Endpoints "http").String }}",
 					send: function(msg) {
 						return fetch(jsonmsg.http.endpoint, {
 							method: "POST",
@@ -504,9 +477,9 @@ const httpSpecTemplate = `
 				},
 				{{ end }}
 				
-				{{ if (index .Endpoints.URLs "websocket") }}
+				{{ if (index .Endpoints "websocket") }}
 				websocket: {
-					endpoint: "{{ js (index .Endpoints.URLs "websocket") }}",
+					endpoint: "{{ js (index .Endpoints "websocket").String }}",
 					conn: undefined,
 					connect: function() {
 						jsonmsg.websocket.conn = new WebSocket(jsonmsg.websocket.endpoint);
@@ -554,7 +527,7 @@ const httpSpecTemplate = `
 		<dd class="level1"><a href="#spec-json">json</a></dd>
 		<dd class="level1"><a href="#spec-html">html</a></dd>
 		<dd><a href="#endpoints">Endpoints</a></dd>
-		{{ range $k, $v := .Endpoints.URLs }}
+		{{ range $k, $v := .Endpoints }}
 		<dd class="level1"><a href="#endpoint-{{ $k }}">{{ $k }}</a></dd>
 		{{ end }}
 
@@ -580,24 +553,24 @@ const httpSpecTemplate = `
 		<a name="spec-json"></a>
 		<h3>
 			json
-			<span><a href="{{ .Endpoints.BaseURL }}/spec.json">{{ .Endpoints.BaseURL }}/spec.json</a></span>
+			<span><a href="{{ SubstringRight .Endpoints.http.String 5 }}/spec.json">{{ SubstringRight .Endpoints.http.String 5 }}/spec.json</a></span>
 		</h3>
 		<p class="level1">Machine readable spec for API</p>
 
 		<a name="spec-html"></a>
 		<h3>
 			html
-			<span><a href="{{ .Endpoints.BaseURL }}/spec">{{ .Endpoints.BaseURL }}/spec</a></span>
+			<span><a href="{{ SubstringRight .Endpoints.http.String 5 }}/spec">{{ SubstringRight .Endpoints.http.String 5 }}/spec</a></span>
 		</h3>
 		<p class="level1">Human readable spec for API</p>
 
 		<a name="endpoints"></a>
 		<h2>Endpoints</h2>
-		{{ range $k, $v := .Endpoints.URLs }}
+		{{ range $k, $v := .Endpoints }}
 		<a name="endpoint-{{ $k }}"></a>
 		<h3>
 			{{ $k }}
-			<span>{{ $v }}</span>
+			<span>{{ $v.String }}</span>
 		</h3>
 		{{ end }}
 		
@@ -631,10 +604,10 @@ const httpSpecTemplate = `
 		<textarea class="code" id="input-{{ $k }}" spellcheck="false" rows={{ if not $v.InSchema }}5{{ else }}{{ Add 5 (len $v.InSchema.Properties) }}{{ end }}>{{ JSON $v.NewInstance }}</textarea>
 		</div>
 		<div class="row right">
-			{{ if (index $.Endpoints.URLs "websocket") }}
+			{{ if (index $.Endpoints "websocket") }}
 			<button onclick="jsonmsg.websocket.sendFromInputToOutput('#input-{{ $k }}', '#output-{{ $k }}')">Send WebSocket</button>
 			{{ end }}
-			{{ if (index $.Endpoints.URLs "http") }}
+			{{ if (index $.Endpoints "http") }}
 			<button onclick="jsonmsg.http.sendFromInputToOutput('#input-{{ $k }}', '#output-{{ $k }}')">Send HTTP</button>
 			{{ end }}
 		</div>

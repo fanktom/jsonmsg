@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go/format"
 	"html/template"
-	"net/url"
 	"sort"
 	"strings"
 
@@ -149,12 +148,8 @@ func generateOutTypes(s *jsonmsg.Spec) ([]byte, error) {
 func generateHTTPHandler(s *jsonmsg.Spec) ([]byte, error) {
 	tmpl, err := template.New("handler").Funcs(template.FuncMap{
 		"Contains": stringsContain,
-		"ParseURL": func(rawurl string) *url.URL {
-			u, err := url.Parse(rawurl)
-			if err != nil {
-				panic(err)
-			}
-			return u
+		"SubstringRight": func(a string, n int) string {
+			return a[0 : len(a)-n]
 		},
 	}).Parse(httpHandlerTemplate)
 	if err != nil {
@@ -302,11 +297,6 @@ func NewAPIMux(i API) *http.ServeMux {
 		if err != nil {
 			return UnparsableRequestErrorMessage, http.StatusUnprocessableEntity
 		}
-
-		// fetchSpec
-		if m.Msg == "fetchSpec" {
-			return newValueMessage("spec", json.RawMessage(newEmbeddedSpec())), http.StatusOK
-		}
 		
 		{{ range .Messages }} 
 		// {{ .Name }}
@@ -374,7 +364,7 @@ func NewAPIMux(i API) *http.ServeMux {
 	}
 
 	// GET /spec.json
-  mux.HandleFunc("{{ .Endpoints.BasePath }}/spec.json", func(w http.ResponseWriter, r *http.Request) {
+  mux.HandleFunc("{{ SubstringRight .Endpoints.http.EscapedPath 5 }}/spec.json", func(w http.ResponseWriter, r *http.Request) {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		
@@ -394,7 +384,7 @@ func NewAPIMux(i API) *http.ServeMux {
 	})
 	
 	// GET /spec
-  mux.HandleFunc("{{ .Endpoints.BasePath }}/spec", func(w http.ResponseWriter, r *http.Request) {
+  mux.HandleFunc("{{ SubstringRight .Endpoints.http.EscapedPath 5 }}/spec", func(w http.ResponseWriter, r *http.Request) {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		
@@ -413,10 +403,10 @@ func NewAPIMux(i API) *http.ServeMux {
 		return
 	})
 
-	{{ if (index .Endpoints.URLs "http") }}
+	{{ if (index .Endpoints "http") }}
 	// protocol: http
 	// POST /http
-  mux.HandleFunc("{{ (ParseURL (index .Endpoints.URLs "http")).EscapedPath }}", func(w http.ResponseWriter, r *http.Request) {
+  mux.HandleFunc("{{ .Endpoints.http.EscapedPath }}", func(w http.ResponseWriter, r *http.Request) {
 		var err error
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
@@ -455,7 +445,7 @@ func NewAPIMux(i API) *http.ServeMux {
 	{{ end }}
 	
 	
-	{{ if (index .Endpoints.URLs "websocket") }}
+	{{ if (index .Endpoints "websocket") }}
 	// protocol: websocket
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
@@ -464,7 +454,7 @@ func NewAPIMux(i API) *http.ServeMux {
 	}
 
 	// GET /websocket
-  mux.HandleFunc("{{ (ParseURL (index .Endpoints.URLs "websocket")).EscapedPath }}", func(w http.ResponseWriter, r *http.Request) {
+  mux.HandleFunc("{{ .Endpoints.websocket.EscapedPath }}", func(w http.ResponseWriter, r *http.Request) {
 		var err error
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")

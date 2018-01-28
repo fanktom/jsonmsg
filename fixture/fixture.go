@@ -6,9 +6,7 @@ const (
 	TestSchemaSimpleLogin = `
 {
 	"endpoints": {
-		"host": "api.specc.io/v1",
-		"protocols": ["http"],
-		"tls": false
+		"http": "http://api.specc.io/v1"
 	},
 	"messages": {
 		"loginWithCredentials": {
@@ -70,9 +68,8 @@ const (
 	TestSchemaSimpleLoginHTTPandWebsocket = `
 {
 	"endpoints": {
-		"host": "api.specc.io/v1",
-		"protocols": ["http", "websocket"],
-		"tls": true
+		"http": "https://api.specc.io/v1",
+		"websocket": "wss://api.specc.io/v1"
 	},
 	"messages": {
 		"loginWithCredentials": {
@@ -134,9 +131,7 @@ const (
 	TestSchemaEmptyMessages = `
 {
 	"endpoints": {
-		"host": "api.specc.io/v1",
-		"protocols": ["http"],
-		"tls": false
+		"http": "http://api.specc.io/v1"
 	},
 	"messages": {
 		"subscribeEmpty": {
@@ -166,9 +161,7 @@ const (
 	TestSchemaValidationSpec = `
 {
 	"endpoints": {
-		"host": "api.specc.io/v1",
-		"protocols": ["http"],
-		"tls": false
+		"http": "http://api.specc.io/v1"
 	},
 	"messages": {
 		"sayHello": {

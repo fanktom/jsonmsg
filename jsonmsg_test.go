@@ -11,14 +11,8 @@ func TestSimpleLogin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !stringsContain(spc.Endpoints.Protocols, "http") {
-		t.Fatalf("endpoint does not contain http protocol")
-	}
-	if spc.Endpoints.TLS {
-		t.Fatalf("TLS should not be enabled")
-	}
-	if spc.Endpoints.URLs["http"] != "http://api.specc.io/v1/http" {
-		t.Fatalf("invalid http url: %v", spc.Endpoints.URLs["http"])
+	if spc.Endpoints["http"].String() != "http://api.specc.io/v1/http" {
+		t.Fatalf("invalid http url: %v", spc.Endpoints["http"].String())
 	}
 
 	m, ok := spc.Messages["loginWithCredentials"]
@@ -61,20 +55,11 @@ func TestSimpleLoginWithHTTPAndWebsockets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !stringsContain(spc.Endpoints.Protocols, "http") {
-		t.Fatalf("endpoint does not contain http protocol")
+	if spc.Endpoints["http"].String() != "https://api.specc.io/v1/http" {
+		t.Fatalf("invalid http url: %v", spc.Endpoints["http"].String())
 	}
-	if !stringsContain(spc.Endpoints.Protocols, "websocket") {
-		t.Fatalf("endpoint does not contain websocket protocol")
-	}
-	if !spc.Endpoints.TLS {
-		t.Fatalf("TLS is not enabled")
-	}
-	if spc.Endpoints.URLs["http"] != "https://api.specc.io/v1/http" {
-		t.Fatalf("invalid http url: %v", spc.Endpoints.URLs["http"])
-	}
-	if spc.Endpoints.URLs["websocket"] != "wss://api.specc.io/v1/websocket" {
-		t.Fatalf("invalid websocket url: %v", spc.Endpoints.URLs["websocket"])
+	if spc.Endpoints["websocket"].String() != "wss://api.specc.io/v1/websocket" {
+		t.Fatalf("invalid websocket url: %v", spc.Endpoints["websocket"].String())
 	}
 }
 
@@ -93,7 +78,7 @@ func TestJSONSpec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if spc.Endpoints.URLs["http"] != spc2.Endpoints.URLs["http"] {
+	if spc.Endpoints["http"].String() != spc2.Endpoints["http"].String() {
 		t.Fatal("different urls")
 	}
 }
